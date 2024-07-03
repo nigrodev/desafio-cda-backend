@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Para fins do desafio, vou usar sqlite por ser mais fácil e não precisa instalar nada 
+  url      = env("DATABASE_URL")
+}
+
+model Badges {
+  id    Int     @default(autoincrement()) @id
+  slug String  @unique
+  name  String
+  image String
+}
