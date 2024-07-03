@@ -16,3 +16,12 @@ Depois de clonar o repositório, rode o comando `npm install` para instalar as d
 Usando esses comandos o banco de dados será criado e populado com os dados do .csv automaticamente.
 
 A API estará disponível em `http://localhost:3000` e a referência OPENAPI em `http://localhost:3000/reference`.
+
+Os usuários disponíveis são:
+| Nome    | Steamid |
+|---------|---------|
+| Garry   | garry   |
+| Gaben   | gaben   |
+| Mineiro | mineiro |
+| Paulo   | paulo   |
+| Jorge   | jorge   |
