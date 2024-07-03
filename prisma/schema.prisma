@@ -7,9 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Badges {
-  id    Int     @default(autoincrement()) @id
-  slug String  @unique
+model Badge {
+  id    Int      @default(autoincrement()) @id
+  slug  String   @unique
   name  String
   image String
+  users UserBadge[]
+}
+
+model User {
+  id      Int        @default(autoincrement()) @id
+  steamid String     @unique
+  name    String
+  badges  UserBadge[]
+}
+
+model UserBadge {
+  userId  Int
+  badgeId Int
+  user    User      @relation(fields: [userId], references: [id])
+  badge   Badge     @relation(fields: [badgeId], references: [id])
+  acquiredAt DateTime @default(now())
+
+  @@id([userId, badgeId])
+  @@unique([userId, badgeId])
 }

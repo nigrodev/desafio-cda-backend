@@ -1,7 +1,66 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Badges as BadgeModel } from '@prisma/client';
+import { Badge as BadgeModel } from '@prisma/client';
+import { IsNotEmpty, IsNumber, IsOptional, IsPositive } from 'class-validator';
 
-class LinksDto {
+export class ListBadgeQuery {
+  @IsOptional()
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  @ApiProperty({
+    description:
+      'Número limite de itens por página. O mínimo é 1 e máximo é 20. O padrão é 5.',
+    required: false,
+    default: 5,
+    type: Number,
+  })
+  limit: number = 5;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  @ApiProperty({
+    description:
+      'Número de páginas. O mínimo e o padrão são 1. Cada página tem `limit` itens.',
+    required: false,
+    default: 1,
+    type: Number,
+  })
+  page: number = 1;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'Filtrar os resultados pelo slug.',
+    required: false,
+    type: String,
+  })
+  slug?: string;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @ApiProperty({
+    description:
+      'Filtrar os resultados pelo nome. O filtro retorna resultados que contêm o valor `name`. Não é case-sensitive.',
+    required: false,
+    type: String,
+  })
+  name?: string;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  @ApiProperty({
+    description: 'Filtrar os resultados pelo ID único.',
+    required: false,
+    type: Number,
+  })
+  id?: number;
+}
+
+class HelperLinks {
   @ApiProperty({
     required: false,
     description: 'URL para a próxima página de resultados',
@@ -15,7 +74,7 @@ class LinksDto {
   prev?: string;
 }
 
-class BadgesDto {
+class Badges {
   @ApiProperty({
     required: true,
     description: 'Identificador único do emblema',
@@ -38,9 +97,9 @@ class BadgesDto {
   image: string;
 }
 
-export class BadgeListDto {
-  @ApiProperty({ type: LinksDto })
-  _links: LinksDto;
+export class BadgeList {
+  @ApiProperty({ type: HelperLinks })
+  _links: HelperLinks;
 
   @ApiProperty({ description: 'Número de resultados por página' })
   limit: number;
@@ -66,6 +125,6 @@ export class BadgeListDto {
   })
   id?: number;
 
-  @ApiProperty({ type: [BadgesDto], description: 'Lista de emblemas' })
+  @ApiProperty({ type: [Badges], description: 'Lista de emblemas' })
   badges: BadgeModel[];
 }
