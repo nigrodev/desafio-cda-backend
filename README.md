@@ -14,3 +14,5 @@ Para rodar o projeto, é necessário ter NodeJS instalado.
 Depois de clonar o repositório, rode o comando `npm install` para instalar as dependências e em seguida `npm run start` para rodar o projeto.
 
 Usando esses comandos o banco de dados será criado e populado com os dados do .csv automaticamente.
+
+A API estará disponível em `http://localhost:3000` e a referência OPENAPI em `http://localhost:3000/reference`.
