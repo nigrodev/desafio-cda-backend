@@ -2,13 +2,14 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
   Post,
   Query,
 } from '@nestjs/common';
-import { Badge, BadgeService } from './badge.service';
+import { BadgeService } from './badge.service';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -26,7 +27,8 @@ import {
   UserBadgesParams,
 } from './badge/user.badges.dto';
 import { BadgeListingUtil } from './badge/list.badge.utils';
-import { AddUserBadgeResponse, BadgeListBody } from './badge/add.badge.dto';
+import { BadgeListBody } from './badge/set.badge.dto';
+import { User } from '@prisma/client';
 
 @ApiTags('Emblemas')
 @Controller('badge')
@@ -128,15 +130,56 @@ export class BadgeController {
   @ApiNotFoundResponse({
     description: 'Usuário ou emblema não encontrado.',
   })
-  async setUserBadges(
+  async addUserBadges(
     @Param() params: UserBadgesParams,
     @Body() body: BadgeListBody[],
-  ): Promise<AddUserBadgeResponse> {
-    const user_badges = await this.badgeService.findBadgesBySteamId(
-      params.steamid,
-    );
+  ) {
+    const { user, badges } = await this.FilterBadges(params.steamid, body);
 
-    if (!user_badges) {
+    const user_badges = await this.badgeService
+      .findPlayerBadgesByIds(user.id, badges)
+      .then((ub) => ub.map((b) => b.badgeId));
+
+    const new_badges = badges.filter((b) => !user_badges.includes(b));
+
+    await this.badgeService.addUserBadges(user.id, new_badges);
+  }
+
+  @ApiBody({
+    type: BadgeListBody,
+    isArray: true,
+    required: true,
+    description: 'Lista de emblemas a serem removidos do usuário.',
+  })
+  @Delete('user/:steamid')
+  @ApiOperation({ summary: 'Remover emblemas de um usuário' })
+  @ApiCreatedResponse({
+    description: 'Emblemas removidos',
+  })
+  @ApiNotFoundResponse({
+    description: 'Usuário ou emblema não encontrado.',
+  })
+  async removeUserBadges(
+    @Param() params: UserBadgesParams,
+    @Body() body: BadgeListBody[],
+  ) {
+    const { user, badges } = await this.FilterBadges(params.steamid, body);
+
+    const user_badges = await this.badgeService
+      .findPlayerBadgesByIds(user.id, badges)
+      .then((ub) => ub.map((b) => b.badgeId));
+
+    // We only remove the badges that the user has
+    await this.badgeService.RemoveUserBadges(user.id, user_badges);
+  }
+
+  private async FilterBadges(
+    steamid: string,
+    body: BadgeListBody[],
+  ): Promise<{ user: User; badges: number[] }> {
+    const user = await this.badgeService.findUserBySteamId(steamid);
+
+    if (!user) {
       throw new NotFoundException('User not found.');
     }
 
@@ -166,7 +209,7 @@ export class BadgeController {
       );
     }
 
-    const Badges: Badge[] = [];
+    const Badges: number[] = [];
 
     if (ids.length > 0) {
       const foundBadges = await this.badgeService.findBadgesByIds(ids);
@@ -175,7 +218,7 @@ export class BadgeController {
         throw new NotFoundException('Badge not found');
       }
 
-      Badges.push(...foundBadges);
+      Badges.push(...foundBadges.map((b) => b.id));
     }
 
     if (slugs.length > 0) {
@@ -185,34 +228,9 @@ export class BadgeController {
         throw new NotFoundException('Badge not found');
       }
 
-      Badges.push(...foundBadges);
+      Badges.push(...foundBadges.map((b) => b.id));
     }
 
-    const repeated_badges: Badge[] = [];
-
-    // NOTE: Isso pode ser muito melhorado, mas por enquanto quero terminar logo isso
-    for (const user_badge of user_badges) {
-      const found_badge = Badges.find(
-        (badge) => badge.id === user_badge.badgeId,
-      );
-      if (found_badge) {
-        repeated_badges.push(found_badge);
-        Badges.splice(Badges.indexOf(found_badge), 1);
-        continue;
-      }
-    }
-
-    // We already checked if the user exists
-    await this.badgeService.addUserBadges(
-      params.steamid,
-      Badges.map((b) => b.id),
-    );
-
-    return {
-      already_had: repeated_badges.map((badge) => ({
-        id: badge.id,
-        slug: badge.slug,
-      })),
-    };
+    return { user: user, badges: Badges };
   }
 }

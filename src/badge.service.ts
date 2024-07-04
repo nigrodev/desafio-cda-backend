@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { Badge, Prisma, UserBadge } from '@prisma/client';
+import { Badge, Prisma, User, UserBadge } from '@prisma/client';
 
 @Injectable()
 export class BadgeService {
@@ -38,6 +38,21 @@ export class BadgeService {
     return user.badges;
   }
 
+  async findUserBySteamId(steamid: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { steamid },
+      include: {
+        badges: true,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return user;
+  }
+
   async findBadgesByIds(ids: number[]): Promise<Badge[]> {
     return this.prisma.badge.findMany({
       where: {
@@ -58,30 +73,42 @@ export class BadgeService {
     });
   }
 
-  async addUserBadges(steamId: string, badgeIds: number[]): Promise<void> {
-    // Verificar se o usuário existe
-    const userExists = await this.prisma.user.findUnique({
-      where: { steamid: steamId },
+  async findPlayerBadgesByIds(
+    userId: number,
+    ids: number[],
+  ): Promise<UserBadge[]> {
+    return this.prisma.userBadge.findMany({
+      where: {
+        userId: userId,
+        badgeId: {
+          in: ids,
+        },
+      },
     });
-    if (!userExists) {
-      throw new Error('User not found');
-    }
+  }
 
-    // Provavelmente tem uma forma mais eficiente de fazer isso
-    // Já retiramos as duplicatas, então o upsert não deve ser necessário
+  async addUserBadges(userId: number, badgeIds: number[]): Promise<void> {
     await this.prisma.$transaction(
       badgeIds.map((badgeId) =>
-        this.prisma.userBadge.upsert({
+        this.prisma.userBadge.create({
+          data: {
+            userId: userId,
+            badgeId: badgeId,
+          },
+        }),
+      ),
+    );
+  }
+
+  async RemoveUserBadges(userId: number, badgeIds: number[]): Promise<void> {
+    await this.prisma.$transaction(
+      badgeIds.map((badgeId) =>
+        this.prisma.userBadge.delete({
           where: {
             userId_badgeId: {
-              userId: userExists.id,
+              userId: userId,
               badgeId: badgeId,
             },
-          },
-          update: {},
-          create: {
-            userId: userExists.id,
-            badgeId: badgeId,
           },
         }),
       ),

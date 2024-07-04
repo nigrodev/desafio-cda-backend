@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 
 export class BadgeListBody {
   @IsOptional()
@@ -38,15 +44,4 @@ export class MinimalBadgeList {
     description: 'O slug do emblema',
   })
   slug: string;
-}
-
-export class AddUserBadgeResponse {
-  @ApiProperty({
-    description:
-      'Os emblemas que o usuário já tinha, e que não foram adicionados novamente.',
-    required: true,
-    type: MinimalBadgeList,
-    isArray: true,
-  })
-  already_had?: MinimalBadgeList[];
 }
